@@ -1,6 +1,16 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, Image as ImageIcon, Sparkles, X, Play, Loader2 } from 'lucide-react';
+import {
+  UploadCloud,
+  Image as ImageIcon,
+  Sparkles,
+  X,
+  Play,
+  Loader2,
+  RotateCcw,
+  RotateCw,
+} from 'lucide-react';
 import { generateSampleFrontCard, generateSampleLaserCard } from '../utils/sampleImages';
+import { rotateImageFile } from '../utils/imageUtils';
 
 export default function ImageUpload({
   activeTab,
@@ -13,6 +23,7 @@ export default function ImageUpload({
 }) {
   const fileInputRef = useRef(null);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -42,6 +53,19 @@ export default function ImageUpload({
     }
   };
 
+  const handleRotate = async (degrees) => {
+    if (!selectedFile || isLoading || isRotating) return;
+    try {
+      setIsRotating(true);
+      const rotated = await rotateImageFile(selectedFile, degrees);
+      onFileSelect(rotated);
+    } catch (err) {
+      console.error('Failed to rotate image:', err);
+    } finally {
+      setIsRotating(false);
+    }
+  };
+
   const loadSample = async () => {
     if (activeTab === 'front') {
       const sample = await generateSampleFrontCard();
@@ -60,15 +84,38 @@ export default function ImageUpload({
           <span>{activeTab === 'front' ? 'Front ID Card Image' : 'Back Card Image (Laser ID)'}</span>
         </h3>
         {selectedFile && (
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={onClear}
-            disabled={isLoading}
-            title="Remove selected image"
-          >
-            <X size={14} /> Clear
-          </button>
+          <div className="header-action-group">
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => handleRotate(-90)}
+              disabled={isLoading || isRotating}
+              title="Rotate 90° counter-clockwise (Left)"
+            >
+              <RotateCcw size={14} className={isRotating ? 'spinner' : ''} />
+              <span>Rotate Left</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => handleRotate(90)}
+              disabled={isLoading || isRotating}
+              title="Rotate 90° clockwise (Right)"
+            >
+              <RotateCw size={14} className={isRotating ? 'spinner' : ''} />
+              <span>Rotate Right</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={onClear}
+              disabled={isLoading || isRotating}
+              title="Remove selected image"
+            >
+              <X size={14} />
+              <span>Clear</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -101,6 +148,33 @@ export default function ImageUpload({
         ) : (
           <div className="preview-wrapper">
             <img src={previewUrl} alt="Card Preview" className="preview-image" />
+
+            {/* Quick Floating Rotation Controls */}
+            {!isLoading && (
+              <div className="preview-floating-toolbar">
+                <button
+                  type="button"
+                  className="preview-action-btn"
+                  onClick={() => handleRotate(-90)}
+                  disabled={isRotating}
+                  title="Rotate Left (90° CCW)"
+                >
+                  <RotateCcw size={13} className={isRotating ? 'spinner' : ''} />
+                  <span>90° Left</span>
+                </button>
+                <button
+                  type="button"
+                  className="preview-action-btn"
+                  onClick={() => handleRotate(90)}
+                  disabled={isRotating}
+                  title="Rotate Right (90° CW)"
+                >
+                  <RotateCw size={13} className={isRotating ? 'spinner' : ''} />
+                  <span>90° Right</span>
+                </button>
+              </div>
+            )}
+
             {isLoading && (
               <>
                 <div className="scanning-bar" />
@@ -112,6 +186,13 @@ export default function ImageUpload({
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {previewUrl && (
+          <div className="preview-rotate-hint">
+            <RotateCw size={12} />
+            <span>If card photo is sideways or upside-down, click Rotate to orient it upright before verifying.</span>
           </div>
         )}
 

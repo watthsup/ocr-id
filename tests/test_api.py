@@ -128,6 +128,10 @@ def test_realtime_id_card_multipart_upload(client, sample_image_bytes):
     assert res["data"]["english_name"]["full_name"] == "Mr. Somchai Jaidee"
     assert res["data"]["address"]["province"] == "นนทบุรี"
     assert res["processing_time_ms"] >= 0
+    assert "confidence_summary" in res["data"]
+    assert res["data"]["confidence_summary"]["overall_confidence"] > 0
+    assert "stages" in res and len(res["stages"]) == 5
+    assert "timings_ms" in res and "ocr" in res["timings_ms"]
 
 
 def test_realtime_id_card_base64_payload(client, sample_image_bytes):
@@ -166,6 +170,8 @@ def test_realtime_laser_id_multipart_upload(client, sample_image_bytes):
     assert res["data"]["formatted_laser_id"] == "JT0-1234567-89"
     assert res["data"]["is_laser_id_valid_format"] is True
     assert res["processing_time_ms"] >= 0
+    assert "confidence_summary" in res["data"]
+    assert "stages" in res and len(res["stages"]) == 5
 
 
 def test_realtime_laser_id_base64_payload(client, sample_image_bytes):

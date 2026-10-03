@@ -82,30 +82,32 @@ ocr-id-card/
 │   │   │   └── id_card.py            # Single Real-Time Endpoint: POST /api/v1/ocr/id-card
 │   │   └── router.py                 # Mounts /ocr router under /api/v1
 │   ├── clients/                      # Outbound External Adapters
-│   │   ├── ocr_client.py             # Azure Document Intelligence SDK client
+│   │   ├── ocr_client.py             # Azure Document Intelligence SDK client with words & polygons
 │   │   └── llm_client.py             # OpenAI & Azure AI Foundry client adapter
 │   ├── core/
-│   │   └── config.py                 # Pydantic BaseSettings (.env, Azure, OpenAI/Foundry config)
+│   │   └── config.py                 # Pydantic BaseSettings (.env, Azure, OpenAI/Foundry, CONFIDENCE_THRESHOLD)
 │   ├── models/
-│   │   └── schemas.py                # Pydantic request & response contracts (Strict Thai ID schema)
+│   │   └── schemas.py                # Pydantic request & response contracts (Strict Thai ID, OCRDocument, ConfidenceSummary)
 │   ├── services/                     # Pure Business Logic
-│   │   ├── kie_service.py            # Thai ID prompt engineering & schema extraction
+│   │   ├── kie_service.py            # Thai ID dual-extraction prompt engineering & schema extraction
+│   │   ├── grounding_service.py      # Field-level evidence grounding & Azure OCR confidence scoring
 │   │   ├── validation_service.py     # Checksum mod 11 calculation & data sanitization
-│   │   └── pipeline_service.py       # Core orchestrator: OCR -> KIE -> Checksum -> Response
+│   │   └── pipeline_service.py       # Core orchestrator: OCR -> KIE -> Checksum -> Grounding -> Stages
 │   └── main.py                       # FastAPI entrypoint, CORS, lifespan, healthcheck
 ├── frontend/                         # Generali-styled React Review Web Application
 │   ├── src/
-│   │   ├── components/               # Header, ImageUpload, FrontCardReview, LaserIdReview
+│   │   ├── components/               # Header, ImageUpload, FrontCardReview, LaserIdReview, TopPipelineBar, ConfidenceBadge
 │   │   ├── utils/sampleImages.js     # Synthetic ID canvas generator
-│   │   ├── App.jsx                   # Review UI logic & API state management
+│   │   ├── App.jsx                   # Review UI logic & API state management with live timer
 │   │   └── index.css                 # Generali Design System (Vanilla CSS)
 │   ├── index.html                    # Fonts (Outfit, Inter, Prompt) & metadata
 │   ├── vite.config.js                # Vite dev server (port 3000) & backend proxy
 │   └── package.json
 ├── tests/
 │   ├── test_checksum.py              # Unit tests for 13-digit Thai ID checksum & date conversion
+│   ├── test_grounding.py             # Unit tests for GroundingService, confidence scoring & thresholding
 │   ├── test_kie_schema.py            # Tests for Pydantic schema validation & LLM response parsing
-│   └── test_api.py                   # Integration test for POST /api/v1/ocr/id-card
+│   └── test_api.py                   # Integration test for POST /api/v1/ocr/id-card & /laser-id
 ├── AGENTS.md                         # Technical architecture & specification
 ├── requirements.txt                  # Python dependencies
 ├── .env.example                      # Configuration template

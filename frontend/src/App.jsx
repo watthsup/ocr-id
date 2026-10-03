@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import ImageUpload from './components/ImageUpload';
 import FrontCardReview from './components/FrontCardReview';
 import LaserIdReview from './components/LaserIdReview';
+import TopPipelineBar from './components/TopPipelineBar';
 import { AlertCircle, ScanLine, FileText } from 'lucide-react';
 
 export default function App() {
@@ -12,8 +13,33 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Results state
   const [frontResult, setFrontResult] = useState(null);
   const [laserResult, setLaserResult] = useState(null);
+
+  // Timer & stage tracking state
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (isLoading) {
+      const startTime = performance.now();
+      timerRef.current = setInterval(() => {
+        setElapsedMs(Math.round(performance.now() - startTime));
+      }, 50);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isLoading]);
 
   const handleTabChange = (newTab) => {
     if (newTab !== activeTab) {
@@ -27,8 +53,12 @@ export default function App() {
   const handleFileSelect = (file) => {
     setSelectedFile(file);
     setError(null);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    setPreviewUrl((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return URL.createObjectURL(file);
+    });
   };
 
   const handleClear = () => {
@@ -38,6 +68,7 @@ export default function App() {
     }
     setPreviewUrl(null);
     setError(null);
+    setElapsedMs(0);
     if (activeTab === 'front') {
       setFrontResult(null);
     } else {
@@ -50,6 +81,7 @@ export default function App() {
 
     setIsLoading(true);
     setError(null);
+    setElapsedMs(0);
 
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -83,6 +115,8 @@ export default function App() {
     }
   };
 
+  const currentResult = activeTab === 'front' ? frontResult : laserResult;
+
   return (
     <div>
       <Header activeTab={activeTab} onTabChange={handleTabChange} />
@@ -96,6 +130,16 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Compact Top Pipeline Strip: Shows live steps & timings across the top without displacing side-by-side results */}
+        <TopPipelineBar
+          stages={currentResult?.stages}
+          timingsMs={currentResult?.timings_ms}
+          isLoading={isLoading}
+          elapsedMs={elapsedMs}
+          overallTimeMs={currentResult?.processing_time_ms ?? null}
+          error={error}
+        />
 
         <div className="workspace-grid">
           {/* Left Column: Image Upload & Preview Controls */}
@@ -111,7 +155,7 @@ export default function App() {
             />
           </div>
 
-          {/* Right Column: Review & Structured Extraction */}
+          {/* Right Column: Result sits directly at the top, perfectly side-by-side with card image */}
           <div>
             {activeTab === 'front' ? (
               frontResult ? (
@@ -127,7 +171,7 @@ export default function App() {
                     </div>
                     <h4>No Front ID Card Processed</h4>
                     <p>
-                      Upload a front-side Thai National ID card image or click "Load Synthetic Thai ID" to test real-time OCR extraction and 13-digit checksum validation.
+                      Upload a front-side Thai National ID card image or click "Load Synthetic Thai ID" to test real-time OCR extraction, grounding, and checksum validation.
                     </p>
                   </div>
                 </div>

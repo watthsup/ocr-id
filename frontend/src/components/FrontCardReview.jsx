@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import {
-  CheckCircle2,
-  XCircle,
-  Copy,
-  Check,
-  Clock,
-  User,
+  AlertTriangle,
   Calendar,
-  MapPin,
+  Check,
+  CheckCircle2,
+  Clock,
   Code,
+  Copy,
   FileCheck2,
+  MapPin,
+  ShieldCheck,
+  User,
+  XCircle,
 } from 'lucide-react';
+import ConfidenceBadge from './ConfidenceBadge';
 
-export default function FrontCardReview({ data, processingTimeMs }) {
+export default function FrontCardReview({
+  data,
+  processingTimeMs,
+}) {
   const [copied, setCopied] = useState(false);
   const [showJson, setShowJson] = useState(false);
 
@@ -40,19 +46,35 @@ export default function FrontCardReview({ data, processingTimeMs }) {
     address,
     date_of_issue,
     date_of_expiry,
+    confidence_summary,
   } = data;
+
+  const fieldScores = confidence_summary?.fields || {};
+  const threshold = confidence_summary?.confidence_threshold ?? 0.8;
+  const reviewFields = confidence_summary?.fields_needing_review || [];
 
   return (
     <div className="ui-card">
       <div className="card-header">
         <h3>
-          <FileCheck2 size={18} color="#C41230" />
+          <FileCheck2 size={18} color="#1E293B" />
           <span>Extraction & Verification Result</span>
         </h3>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Quick Confidence Pill */}
+          {confidence_summary && (
+            <span
+              className={`badge ${confidence_summary.is_overall_confident ? 'badge-success' : 'badge-warning'}`}
+              title={`Confidence threshold: ${(threshold * 100).toFixed(0)}%`}
+            >
+              {confidence_summary.is_overall_confident ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+              <span>{confidence_summary.overall_confidence_percentage}% Confidence</span>
+            </span>
+          )}
+
           {processingTimeMs && (
-            <span className="latency-badge" title="Total Roundtrip & Pipeline Latency">
-              <Clock size={13} /> {processingTimeMs.toFixed(1)} ms
+            <span className="latency-badge" title="Total Pipeline Latency">
+              <Clock size={12} /> {processingTimeMs.toFixed(0)} ms
             </span>
           )}
           <button
@@ -68,33 +90,53 @@ export default function FrontCardReview({ data, processingTimeMs }) {
       </div>
 
       <div className="card-body">
+        {/* Review Alert Banner only when low confidence or failed checksum */}
+        {reviewFields.length > 0 && (
+          <div className="review-alert-banner">
+            <AlertTriangle size={16} />
+            <div>
+              <strong>Review Required:</strong> The following field(s) scored below the {(threshold * 100).toFixed(0)}% confidence threshold:
+              <span className="review-fields-list">
+                {reviewFields.map((f) => (
+                  <span key={f} className="review-pill">{fieldScores[f]?.field_name_en || f}</span>
+                ))}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* National ID Banner */}
         <div className="id-banner">
           <div>
             <div className="id-label">Citizen Identification Number (เลขประจำตัวประชาชน)</div>
             <div className="id-number">{formatThaiId(identification_number)}</div>
           </div>
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {is_id_checksum_valid ? (
               <span className="badge badge-success">
-                <CheckCircle2 size={15} /> Checksum Valid (Mod 11)
+                <ShieldCheck size={13} /> Mod 11 Valid
               </span>
             ) : (
               <span className="badge badge-error">
-                <XCircle size={15} /> Checksum Mismatch
+                <XCircle size={13} /> Checksum Invalid
               </span>
             )}
+            <ConfidenceBadge fieldConfidence={fieldScores.identification_number} />
           </div>
         </div>
 
         {/* Names Section */}
         <div className="section-block">
           <div className="section-title">
-            <User size={14} /> Names & Personal Identity
+            <User size={14} color="#475569" /> Names & Personal Identity
           </div>
           <div className="data-grid-2">
-            <div className="field-cell highlight">
-              <div className="field-key">ชื่อ-นามสกุล (Thai Name)</div>
+            {/* Thai Name */}
+            <div className="field-cell">
+              <div className="field-header-row">
+                <span className="field-key">ชื่อ-นามสกุล (Thai Name)</span>
+                <ConfidenceBadge fieldConfidence={fieldScores.thai_name} />
+              </div>
               <div className="field-val thai-text">{thai_name?.full_name || '—'}</div>
               <div className="field-sub">
                 คำนำหน้า: {thai_name?.title || '—'} | ชื่อ: {thai_name?.first_name || '—'}{' '}
@@ -102,8 +144,12 @@ export default function FrontCardReview({ data, processingTimeMs }) {
               </div>
             </div>
 
-            <div className="field-cell highlight">
-              <div className="field-key">English Name</div>
+            {/* English Name */}
+            <div className="field-cell">
+              <div className="field-header-row">
+                <span className="field-key">English Name</span>
+                <ConfidenceBadge fieldConfidence={fieldScores.english_name} />
+              </div>
               <div className="field-val">{english_name?.full_name || '—'}</div>
               <div className="field-sub">
                 Title: {english_name?.title || '—'} | First: {english_name?.first_name || '—'}{' '}
@@ -116,12 +162,15 @@ export default function FrontCardReview({ data, processingTimeMs }) {
         {/* Dates & Demographics */}
         <div className="section-block">
           <div className="section-title">
-            <Calendar size={14} /> Dates & Validity
+            <Calendar size={14} color="#475569" /> Dates & Validity
           </div>
           <div className="data-grid-3">
             {/* Date of Birth */}
             <div className="field-cell">
-              <div className="field-key">วันเกิด (Date of Birth)</div>
+              <div className="field-header-row">
+                <span className="field-key">วันเกิด (DOB)</span>
+                <ConfidenceBadge fieldConfidence={fieldScores.date_of_birth} />
+              </div>
               <div className="field-val thai-text">{date_of_birth?.raw_text_th || '—'}</div>
               <div className="field-sub">
                 CE: {date_of_birth?.iso_date || '—'} ({date_of_birth?.year_ce || '—'})
@@ -133,7 +182,10 @@ export default function FrontCardReview({ data, processingTimeMs }) {
 
             {/* Date of Issue */}
             <div className="field-cell">
-              <div className="field-key">วันออกบัตร (Date of Issue)</div>
+              <div className="field-header-row">
+                <span className="field-key">วันออกบัตร (Issue)</span>
+                <ConfidenceBadge fieldConfidence={fieldScores.date_of_issue} />
+              </div>
               <div className="field-val thai-text">{date_of_issue?.raw_text_th || '—'}</div>
               <div className="field-sub">
                 CE: {date_of_issue?.iso_date || '—'} ({date_of_issue?.year_ce || '—'})
@@ -145,7 +197,10 @@ export default function FrontCardReview({ data, processingTimeMs }) {
 
             {/* Date of Expiry */}
             <div className="field-cell">
-              <div className="field-key">วันหมดอายุ (Date of Expiry)</div>
+              <div className="field-header-row">
+                <span className="field-key">วันหมดอายุ (Expiry)</span>
+                <ConfidenceBadge fieldConfidence={fieldScores.date_of_expiry} />
+              </div>
               {date_of_expiry?.is_lifetime ? (
                 <div style={{ marginTop: '4px' }}>
                   <span className="badge badge-info">ตลอดชีพ (Lifetime)</span>
@@ -169,7 +224,10 @@ export default function FrontCardReview({ data, processingTimeMs }) {
         <div className="section-block">
           <div className="data-grid-2">
             <div className="field-cell">
-              <div className="field-key">ศาสนา (Religion)</div>
+              <div className="field-header-row">
+                <span className="field-key">ศาสนา (Religion)</span>
+                <ConfidenceBadge fieldConfidence={fieldScores.religion} />
+              </div>
               <div className="field-val thai-text">{religion || '—'}</div>
             </div>
           </div>
@@ -178,11 +236,14 @@ export default function FrontCardReview({ data, processingTimeMs }) {
         {/* Address */}
         <div className="section-block">
           <div className="section-title">
-            <MapPin size={14} /> ที่อยู่ตามทะเบียนราษฎร (Registered Address)
+            <MapPin size={14} color="#475569" /> ที่อยู่ตามทะเบียนราษฎร (Registered Address)
           </div>
           <div className="address-card">
-            <div className="address-raw">
-              <strong>ที่อยู่เต็ม:</strong> {address?.raw_address || '—'}
+            <div className="address-header-row">
+              <div className="address-raw">
+                <strong>ที่อยู่เต็ม:</strong> {address?.raw_address || '—'}
+              </div>
+              <ConfidenceBadge fieldConfidence={fieldScores.address} />
             </div>
             <div className="address-chips">
               {address?.house_no && (
@@ -237,7 +298,7 @@ export default function FrontCardReview({ data, processingTimeMs }) {
             onClick={() => setShowJson(!showJson)}
           >
             <Code size={14} />
-            <span>{showJson ? 'Hide JSON Contract' : 'View JSON Contract'}</span>
+            <span>{showJson ? 'Hide JSON Contract' : 'View Full JSON Contract'}</span>
           </button>
         </div>
 

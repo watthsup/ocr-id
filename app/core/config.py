@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # Processing & Validation Flags
     DEFAULT_VALIDATE_CHECKSUM: bool = True
     MAX_IMAGE_SIZE_MB: int = 10
+    CONFIDENCE_THRESHOLD: float = Field(
+        default=0.80,
+        description="Minimum confidence score (0.0 - 1.0) to flag field as confident vs needs review"
+    )
 
 
 settings = Settings()

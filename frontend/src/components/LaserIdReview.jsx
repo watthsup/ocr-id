@@ -1,22 +1,37 @@
 import React, { useState } from 'react';
 import {
-  CheckCircle2,
-  XCircle,
-  Copy,
+  AlertTriangle,
   Check,
+  CheckCircle2,
   Clock,
   Code,
-  QrCode,
+  Copy,
   Info,
+  QrCode,
+  ShieldCheck,
+  XCircle,
 } from 'lucide-react';
+import ConfidenceBadge from './ConfidenceBadge';
 
-export default function LaserIdReview({ data, processingTimeMs }) {
+export default function LaserIdReview({
+  data,
+  processingTimeMs,
+}) {
   const [copied, setCopied] = useState(false);
   const [showJson, setShowJson] = useState(false);
 
   if (!data) return null;
 
-  const { raw_laser_id, formatted_laser_id, is_laser_id_valid_format } = data;
+  const {
+    raw_laser_id,
+    formatted_laser_id,
+    is_laser_id_valid_format,
+    confidence_summary,
+  } = data;
+
+  const fieldScores = confidence_summary?.fields || {};
+  const laserField = fieldScores.laser_id;
+  const threshold = confidence_summary?.confidence_threshold ?? 0.8;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(formatted_laser_id || raw_laser_id || '');
@@ -28,13 +43,23 @@ export default function LaserIdReview({ data, processingTimeMs }) {
     <div className="ui-card">
       <div className="card-header">
         <h3>
-          <QrCode size={18} color="#C41230" />
+          <QrCode size={18} color="#1E293B" />
           <span>Laser ID Verification Result (รหัสหลังบัตร)</span>
         </h3>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {confidence_summary && (
+            <span
+              className={`badge ${confidence_summary.is_overall_confident ? 'badge-success' : 'badge-warning'}`}
+              title={`Confidence threshold: ${(threshold * 100).toFixed(0)}%`}
+            >
+              {confidence_summary.is_overall_confident ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+              <span>{confidence_summary.overall_confidence_percentage}% Confidence</span>
+            </span>
+          )}
+
           {processingTimeMs && (
-            <span className="latency-badge" title="OCR & LLM Extraction Latency">
-              <Clock size={13} /> {processingTimeMs.toFixed(1)} ms
+            <span className="latency-badge" title="Total Pipeline Latency">
+              <Clock size={12} /> {processingTimeMs.toFixed(0)} ms
             </span>
           )}
           <button
@@ -56,24 +81,28 @@ export default function LaserIdReview({ data, processingTimeMs }) {
             <div className="id-label">Laser Code (12 Chars Alphanumeric)</div>
             <div className="laser-code">{formatted_laser_id || raw_laser_id || '—'}</div>
           </div>
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {is_laser_id_valid_format ? (
               <span className="badge badge-success">
-                <CheckCircle2 size={15} /> Valid DOPA Format
+                <ShieldCheck size={13} /> DOPA Format Valid
               </span>
             ) : (
               <span className="badge badge-error">
-                <XCircle size={15} /> Invalid Laser Format
+                <XCircle size={13} /> Invalid Format
               </span>
             )}
+            {laserField && <ConfidenceBadge fieldConfidence={laserField} />}
           </div>
         </div>
 
         {/* Breakdown details */}
         <div className="section-block">
           <div className="data-grid-2">
-            <div className="field-cell highlight">
-              <div className="field-key">Formatted Laser ID</div>
+            <div className="field-cell">
+              <div className="field-header-row">
+                <span className="field-key">Formatted Laser ID</span>
+                {laserField && <ConfidenceBadge fieldConfidence={laserField} compact />}
+              </div>
               <div className="field-val" style={{ fontFamily: 'var(--font-mono)' }}>
                 {formatted_laser_id || '—'}
               </div>
@@ -96,7 +125,7 @@ export default function LaserIdReview({ data, processingTimeMs }) {
             <Info size={16} /> Thai National ID Laser Code Standard
           </div>
           <p>
-            The Laser ID on the back of Thai National ID cards contains exactly 12 alphanumeric
+            The Laser ID printed on the back of Thai National ID cards contains exactly 12 alphanumeric
             characters. The first 2 characters are English uppercase letters (e.g. <code>JT</code>, <code>ME</code>, <code>JC</code>) representing the card batch authority, followed by 10 numeric digits.
           </p>
         </div>
@@ -109,7 +138,7 @@ export default function LaserIdReview({ data, processingTimeMs }) {
             onClick={() => setShowJson(!showJson)}
           >
             <Code size={14} />
-            <span>{showJson ? 'Hide JSON Contract' : 'View JSON Contract'}</span>
+            <span>{showJson ? 'Hide JSON Contract' : 'View Full JSON Contract'}</span>
           </button>
         </div>
 
