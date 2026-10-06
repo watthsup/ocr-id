@@ -421,7 +421,7 @@ The service is fully dockerized with a production-grade 3-tier architecture:
 │  - /health             ──► Backend (:8000)      │
 │  - /docs, /redoc       ──► Backend (:8000)      │
 │  - /demo/id-card/*     ──► Frontend (:80)       │
-│  - / (Redirect)        ──► /demo/id-card/       │
+│  - /                   ──► Gateway Hub (Portal) │
 └──────────────────────┬──────────────────────────┘
                        │ Docker Network (app_network)
          ┌─────────────┴─────────────┐
@@ -446,7 +446,8 @@ The service is fully dockerized with a production-grade 3-tier architecture:
    ```
 
 3. Access the services:
-   * **Web Application (Review UI):** [http://localhost/demo/id-card](http://localhost/demo/id-card) (หรือเข้า `http://localhost` จะ redirect ไปที่ `/demo/id-card/` อัตโนมัติ)
+   * **Web Application (Thai ID Card):** [http://localhost/demo/id-card](http://localhost/demo/id-card)
+   * **Gateway Landing Hub:** [http://localhost](http://localhost) (Portal รวมลิงก์แอปต่างๆ เช่น `/demo/id-card` และ `/demo/group-eb` ในอนาคต)
    * **Interactive API Documentation:** [http://localhost/docs](http://localhost/docs)
    * **Health Check:** [http://localhost/health](http://localhost/health)
    * **Direct Backend API (optional):** [http://localhost:8000](http://localhost:8000)

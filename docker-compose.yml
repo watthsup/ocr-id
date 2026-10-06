@@ -23,7 +23,7 @@ services:
       retries: 3
       start_period: 5s
     networks:
-      - app_network
+      - ocr-poc
 
   # ----------------------------------------------------------------------------
   # 2. Frontend Service: React + Vite + Generali Design System
@@ -42,7 +42,7 @@ services:
       backend:
         condition: service_healthy
     networks:
-      - app_network
+      - ocr-poc
 
   # ----------------------------------------------------------------------------
   # 3. Nginx Gateway: Reverse Proxy & Unified Entry Point
@@ -63,8 +63,8 @@ services:
       frontend:
         condition: service_started
     networks:
-      - app_network
+      - ocr-poc
 
 networks:
-  app_network:
-    driver: bridge
+  ocr-poc:
+    name: ocr-poc
