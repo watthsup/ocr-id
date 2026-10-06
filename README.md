@@ -420,16 +420,17 @@ The service is fully dockerized with a production-grade 3-tier architecture:
 │  - /api/*              ──► Backend (:8000)      │
 │  - /health             ──► Backend (:8000)      │
 │  - /docs, /redoc       ──► Backend (:8000)      │
-│  - /demo/id-card/*     ──► Frontend (:80)       │
-│  - /                   ──► Gateway Hub (Portal) │
-└──────────────────────┬──────────────────────────┘
-                       │ Docker Network (app_network)
-         ┌─────────────┴─────────────┐
-         ▼                           ▼
-┌──────────────────┐        ┌──────────────────┐
-│  Backend Service │        │ Frontend Service │
-│  FastAPI (:8000) │        │ React SPA (:80)  │
-└──────────────────┘        └──────────────────┘
+│  - /demo/id-card/*       ──► Thai ID Card Frontend (:80)      │
+│  - /demo/ocr-group-eb/*   ──► Group EB Claims Frontend (:80)   │
+│  - /                     ──► Gateway Hub (Portal)             │
+└──────────────────────┬────────────────────────────────────────┘
+                       │ Docker Network (ocr-poc)
+         ┌─────────────┼─────────────────────────┐
+         ▼             ▼                         ▼
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────────────┐
+│  ID Card Service │ │ ID Card Frontend │ │ Group EB Services        │
+│  FastAPI (:8000) │ │ React SPA (:80)  │ │ (claims_eb_frontend/api) │
+└──────────────────┘ └──────────────────┘ └──────────────────────────┘
 ```
 
 ### 1. Quick Start (Production Mode)
@@ -440,14 +441,15 @@ The service is fully dockerized with a production-grade 3-tier architecture:
    # Edit .env with your Azure Document Intelligence and OpenAI/Foundry credentials
    ```
 
-2. Build and start all 3 services in the background:
+2. Build and start all services in the background:
    ```bash
    docker compose up --build -d
    ```
 
 3. Access the services:
    * **Web Application (Thai ID Card):** [http://localhost/demo/id-card](http://localhost/demo/id-card)
-   * **Gateway Landing Hub:** [http://localhost](http://localhost) (Portal รวมลิงก์แอปต่างๆ เช่น `/demo/id-card` และ `/demo/group-eb` ในอนาคต)
+   * **Web Application (Group EB Claims):** [http://localhost/demo/ocr-group-eb](http://localhost/demo/ocr-group-eb)
+   * **Gateway Landing Hub:** [http://localhost](http://localhost) (Portal รวมลิงก์ทุกแอป)
    * **Interactive API Documentation:** [http://localhost/docs](http://localhost/docs)
    * **Health Check:** [http://localhost/health](http://localhost/health)
    * **Direct Backend API (optional):** [http://localhost:8000](http://localhost:8000)
