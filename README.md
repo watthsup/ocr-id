@@ -421,7 +421,7 @@ The service is fully dockerized with a production-grade 3-tier architecture:
 │  - /health             ──► Backend (:8000)      │
 │  - /docs, /redoc       ──► Backend (:8000)      │
 │  - /demo/id-card/*       ──► Thai ID Card Frontend (:80)      │
-│  - /demo/ocr-group-eb/*   ──► Group EB Claims Frontend (:80)   │
+│  - /demo/group-eb/*   ──► Group EB Claims Frontend (:80)   │
 │  - /                     ──► Gateway Hub (Portal)             │
 └──────────────────────┬────────────────────────────────────────┘
                        │ Docker Network (ocr-poc)
@@ -448,7 +448,7 @@ The service is fully dockerized with a production-grade 3-tier architecture:
 
 3. Access the services:
    * **Web Application (Thai ID Card):** [http://localhost/demo/id-card](http://localhost/demo/id-card)
-   * **Web Application (Group EB Claims):** [http://localhost/demo/ocr-group-eb](http://localhost/demo/ocr-group-eb)
+   * **Web Application (Group EB Claims):** [http://localhost/demo/group-eb](http://localhost/demo/group-eb)
    * **Gateway Landing Hub:** [http://localhost](http://localhost) (Portal รวมลิงก์ทุกแอป)
    * **Interactive API Documentation:** [http://localhost/docs](http://localhost/docs)
    * **Health Check:** [http://localhost/health](http://localhost/health)
