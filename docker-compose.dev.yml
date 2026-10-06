@@ -1,0 +1,65 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Backend Service (Development with Live Reload)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: thai_id_backend_dev
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - APP_ENV=development
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+    ports:
+      - "8000:8000"
+    networks:
+      - app_network
+
+  # ----------------------------------------------------------------------------
+  # 2. Frontend Service (Vite Dev Server with Hot Module Replacement)
+  # ----------------------------------------------------------------------------
+  frontend:
+    image: node:20-alpine
+    container_name: thai_id_frontend_dev
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3000"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+  # ----------------------------------------------------------------------------
+  # 3. Nginx Gateway (Dev Mode with WebSocket HMR Support)
+  # ----------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: thai_id_nginx_dev
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx/default.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - app_network
+
+volumes:
+  frontend_node_modules:
+
+networks:
+  app_network:
+    driver: bridge

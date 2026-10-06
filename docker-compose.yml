@@ -1,0 +1,70 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Backend Service: FastAPI + Azure Document Intelligence & LLM KIE
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: thai_id_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+    expose:
+      - "8000"
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - app_network
+
+  # ----------------------------------------------------------------------------
+  # 2. Frontend Service: React + Vite + Generali Design System
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: thai_id_frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  # ----------------------------------------------------------------------------
+  # 3. Nginx Gateway: Reverse Proxy & Unified Entry Point
+  # ----------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: thai_id_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

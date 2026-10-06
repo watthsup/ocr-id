@@ -404,9 +404,88 @@ A minimal, modern React application built with **Vanilla CSS** featuring General
 
 ---
 
-## 💡 Production Deployment Notes
+## 🐳 Docker Deployment (Nginx + Frontend + Backend)
 
-To run in production behind a reverse proxy (e.g., Nginx):
+The service is fully dockerized with a production-grade 3-tier architecture:
+* **`nginx` (Gateway Reverse Proxy - Port 80):** Unified entry point handling CORS-free reverse proxying, SSL-readiness, request timeouts (120s for LLM/OCR), max upload payload up to 25MB, and Gzip compression.
+* **`backend` (FastAPI Service - Port 8000):** Python 3.12-slim container running Uvicorn ASGI with non-root security user, built-in health checks (`/health`), and Azure / LLM processing.
+* **`frontend` (React + Vite Web App - Port 3000 / Internal Port 80):** Multi-stage Node 20 builder and lightweight Nginx static runner with immutable asset caching and SPA routing.
+
+```text
+[ Browser / Client ] :80
+           │
+           ▼
+┌──────────────────────────────────────────────┐
+│  Nginx Gateway (:80)                         │
+│  - /api/*           ──► Backend (:8000)      │
+│  - /health          ──► Backend (:8000)      │
+│  - /docs, /redoc    ──► Backend (:8000)      │
+│  - /*               ──► Frontend (:80)       │
+└──────────────────────┬───────────────────────┘
+                       │ Docker Network (app_network)
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+┌──────────────────┐        ┌──────────────────┐
+│  Backend Service │        │ Frontend Service │
+│  FastAPI (:8000) │        │ React SPA (:80)  │
+└──────────────────┘        └──────────────────┘
+```
+
+### 1. Quick Start (Production Mode)
+
+1. Make sure your `.env` file exists and is configured:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Azure Document Intelligence and OpenAI/Foundry credentials
+   ```
+
+2. Build and start all 3 services in the background:
+   ```bash
+   docker compose up --build -d
+   ```
+
+3. Access the services:
+   * **Web Application (Review UI):** [http://localhost](http://localhost) (or `http://localhost:80`)
+   * **Interactive API Documentation:** [http://localhost/docs](http://localhost/docs)
+   * **Health Check:** [http://localhost/health](http://localhost/health)
+   * **Direct Backend API (optional):** [http://localhost:8000](http://localhost:8000)
+
+4. Monitor status and logs:
+   ```bash
+   # Check service health
+   docker compose ps
+
+   # Follow combined or specific service logs
+   docker compose logs -f
+   docker compose logs -f backend
+   docker compose logs -f nginx
+   ```
+
+5. Run test suite inside the running container:
+   ```bash
+   docker compose exec backend pytest
+   ```
+
+6. Stop containers:
+   ```bash
+   docker compose down
+   ```
+
+---
+
+### 2. Live Development Mode (Hot-Reload)
+
+To run in development mode with live source-code reloading for both FastAPI (`uvicorn --reload`) and Vite (`npm run dev` with HMR WebSocket support):
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+---
+
+## 💡 Production Deployment Notes (Bare Metal / VM)
+
+If running without Docker directly on a host machine behind a system reverse proxy:
 
 ```bash
 uvicorn app.main:app \
@@ -416,4 +495,5 @@ uvicorn app.main:app \
   --proxy-headers \
   --forwarded-allow-ips="*"
 ```
+
 

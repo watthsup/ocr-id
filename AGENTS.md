@@ -102,12 +102,23 @@ ocr-id-card/
 │   │   └── index.css                 # Generali Design System (Vanilla CSS)
 │   ├── index.html                    # Fonts (Outfit, Inter, Prompt) & metadata
 │   ├── vite.config.js                # Vite dev server (port 3000) & backend proxy
+│   ├── nginx.conf                    # Frontend internal SPA static server config
+│   ├── Dockerfile                    # Multi-stage Docker build for React
 │   └── package.json
+├── nginx/                            # Gateway Reverse Proxy
+│   ├── default.conf                  # Production reverse proxy (ports, timeouts, headers)
+│   ├── default.dev.conf              # Development reverse proxy with Vite HMR
+│   └── Dockerfile                    # Nginx Alpine reverse proxy image
 ├── tests/
 │   ├── test_checksum.py              # Unit tests for 13-digit Thai ID checksum & date conversion
 │   ├── test_grounding.py             # Unit tests for GroundingService, confidence scoring & thresholding
 │   ├── test_kie_schema.py            # Tests for Pydantic schema validation & LLM response parsing
 │   └── test_api.py                   # Integration test for POST /api/v1/ocr/id-card & /laser-id
+├── Dockerfile                        # Backend FastAPI production Docker image (Python 3.12-slim)
+├── Dockerfile.backend                # Backend Docker image alias
+├── docker-compose.yml                # Production orchestration (nginx + frontend + backend)
+├── docker-compose.dev.yml            # Development orchestration with hot reload
+├── .dockerignore                     # Docker build context ignore rules
 ├── AGENTS.md                         # Technical architecture & specification
 ├── requirements.txt                  # Python dependencies
 ├── .env.example                      # Configuration template
@@ -343,6 +354,24 @@ MAX_IMAGE_SIZE_MB=10
   ```
   Open `http://localhost:3000` in your browser. Requests to `/api` and `/health` will be automatically proxied to port `8000`.
 
-* **Interactive API Documentation:**
-  Open `http://localhost:8000/docs` in your browser to inspect and test the real-time inference endpoints via Swagger UI.
+* **Run with Docker Compose (Production - Nginx + Frontend + Backend):**
+  ```bash
+  docker compose up --build -d
+  # Open http://localhost (Frontend review UI)
+  # Open http://localhost/docs (API Swagger documentation)
+  ```
+
+* **Run with Docker Compose (Development with Hot Reload):**
+  ```bash
+  docker compose -f docker-compose.dev.yml up --build
+  ```
+
+* **Run Tests inside Backend Container:**
+  ```bash
+  docker compose exec backend pytest -v
+  ```
+
+* **Run Interactive API Documentation:**
+  Open `http://localhost:8000/docs` (direct) or `http://localhost/docs` (via Nginx proxy) in your browser.
+
 
