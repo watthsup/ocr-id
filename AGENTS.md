@@ -357,7 +357,7 @@ MAX_IMAGE_SIZE_MB=10
 * **Run with Docker Compose (Production - Nginx + Frontend + Backend):**
   ```bash
   docker compose up --build -d
-  # Open http://localhost (Frontend review UI)
+  # Open http://localhost/demo/id-card (Frontend review UI, or http://localhost which redirects)
   # Open http://localhost/docs (API Swagger documentation)
   ```
 

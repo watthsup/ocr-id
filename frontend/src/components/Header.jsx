@@ -33,7 +33,7 @@ export default function Header({ activeTab, onTabChange }) {
               G
             </div>
             <div className="brand-info">
-              <h1>Generali ID Verify</h1>
+              <h1>GenWings OCR Demo</h1>
               <div className="brand-subtitle">
                 <ShieldCheck size={14} color="#C41230" />
                 <span>Thai National ID & Laser OCR Engine</span>
@@ -44,10 +44,10 @@ export default function Header({ activeTab, onTabChange }) {
           <div className="header-actions">
             <div
               className={`health-pill ${healthStatus === 'online'
-                  ? 'online'
-                  : healthStatus === 'offline'
-                    ? 'offline'
-                    : ''
+                ? 'online'
+                : healthStatus === 'offline'
+                  ? 'offline'
+                  : ''
                 }`}
               title={
                 healthStatus === 'online'

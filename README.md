@@ -417,11 +417,12 @@ The service is fully dockerized with a production-grade 3-tier architecture:
            ▼
 ┌──────────────────────────────────────────────┐
 │  Nginx Gateway (:80)                         │
-│  - /api/*           ──► Backend (:8000)      │
-│  - /health          ──► Backend (:8000)      │
-│  - /docs, /redoc    ──► Backend (:8000)      │
-│  - /*               ──► Frontend (:80)       │
-└──────────────────────┬───────────────────────┘
+│  - /api/*              ──► Backend (:8000)      │
+│  - /health             ──► Backend (:8000)      │
+│  - /docs, /redoc       ──► Backend (:8000)      │
+│  - /demo/id-card/*     ──► Frontend (:80)       │
+│  - / (Redirect)        ──► /demo/id-card/       │
+└──────────────────────┬──────────────────────────┘
                        │ Docker Network (app_network)
          ┌─────────────┴─────────────┐
          ▼                           ▼
@@ -445,10 +446,11 @@ The service is fully dockerized with a production-grade 3-tier architecture:
    ```
 
 3. Access the services:
-   * **Web Application (Review UI):** [http://localhost](http://localhost) (or `http://localhost:80`)
+   * **Web Application (Review UI):** [http://localhost/demo/id-card](http://localhost/demo/id-card) (หรือเข้า `http://localhost` จะ redirect ไปที่ `/demo/id-card/` อัตโนมัติ)
    * **Interactive API Documentation:** [http://localhost/docs](http://localhost/docs)
    * **Health Check:** [http://localhost/health](http://localhost/health)
    * **Direct Backend API (optional):** [http://localhost:8000](http://localhost:8000)
+   * **Direct Frontend Dev (optional):** [http://localhost:3000](http://localhost:3000) (รันแบบ standalone ปกติ ไม่เพี้ยน)
 
 4. Monitor status and logs:
    ```bash
