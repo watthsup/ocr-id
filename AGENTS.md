@@ -115,7 +115,6 @@ ocr-id-card/
 │   ├── test_kie_schema.py            # Tests for Pydantic schema validation & LLM response parsing
 │   └── test_api.py                   # Integration test for POST /api/v1/ocr/id-card & /laser-id
 ├── Dockerfile                        # Backend FastAPI production Docker image (Python 3.12-slim)
-├── Dockerfile.backend                # Backend Docker image alias
 ├── docker-compose.yml                # Production orchestration (nginx + frontend + backend)
 ├── docker-compose.dev.yml            # Development orchestration with hot reload
 ├── .dockerignore                     # Docker build context ignore rules
