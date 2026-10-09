@@ -274,9 +274,21 @@ body {
 /* Two-column Main Grid */
 .workspace-grid {
   display: grid;
-  grid-template-columns: 460px 1fr;
-  gap: 28px;
-  align-items: start;
+  grid-template-columns: 410px 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.workspace-grid > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workspace-grid > div > .ui-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 1024px) {
@@ -384,14 +396,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
-  max-height: 380px;
+  min-height: 180px;
+  max-height: 270px;
 }
 
 .preview-image {
   width: 100%;
   height: auto;
-  max-height: 380px;
+  max-height: 270px;
   object-fit: contain;
   display: block;
 }
@@ -1617,4 +1629,1088 @@ body {
   gap: 12px;
   margin-bottom: 12px;
   flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Quality Gate Rejection Banner (< 40% Confidence)
+   ========================================================================== */
+
+.quality-gate-rejected-banner {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FEE2E2 100%);
+  border: 1.5px solid #F87171;
+  border-left: 6px solid var(--generali-red);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(196, 18, 48, 0.08);
+  animation: fadeIn 0.3s ease;
+}
+
+.qg-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.qg-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: rgba(196, 18, 48, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.qg-title-group {
+  flex: 1;
+  min-width: 220px;
+}
+
+.qg-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #991B1B;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qg-subtitle {
+  font-size: 0.85rem;
+  color: #7F1D1D;
+  margin-top: 2px;
+}
+
+.qg-status-pill {
+  background: var(--generali-red);
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 6px rgba(196, 18, 48, 0.3);
+}
+
+.qg-reason-text {
+  font-size: 0.9rem;
+  color: #991B1B;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.qg-recommendations {
+  font-size: 0.82rem;
+  color: #7F1D1D;
+}
+
+.qg-rec-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qg-recommendations ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qg-recommendations li {
+  line-height: 1.4;
+}
+
+.top-bar-rejected-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #F87171;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   Camera Trigger Buttons & Dropzone Elements
+   ========================================================================== */
+
+.dropzone-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 10px 0;
+  width: 60%;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dropzone-divider::before,
+.dropzone-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.dropzone-divider:not(:empty)::before {
+  margin-right: 0.75em;
+}
+
+.dropzone-divider:not(:empty)::after {
+  margin-left: 0.75em;
+}
+
+.dropzone-camera-btn {
+  background: #FFFFFF;
+  border: 1.5px solid var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.dropzone-camera-btn:hover {
+  border-color: var(--generali-red);
+  color: var(--generali-red);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(196, 18, 48, 0.15);
+}
+
+.camera-header-btn {
+  border-color: rgba(196, 18, 48, 0.3);
+}
+
+.camera-header-btn:hover {
+  background: var(--generali-red-ultralight);
+  border-color: var(--generali-red);
+}
+
+.camera-retake-btn {
+  background: #FFFFFF !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.camera-retake-btn:hover {
+  border-color: var(--generali-red) !important;
+  color: var(--generali-red) !important;
+}
+
+/* ==========================================================================
+   Camera Scanner Modal with Card Overlay Viewfinder
+   ========================================================================== */
+
+.camera-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 29, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.camera-modal-container {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 860px;
+  height: 90vh;
+  max-height: 680px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+/* Visual Flash Effect on Shutter */
+.camera-shutter-flash {
+  position: absolute;
+  inset: 0;
+  background: #FFFFFF;
+  z-index: 50;
+  animation: shutterFlash 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes shutterFlash {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.camera-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: #1F2937;
+  border-bottom: 1px solid #374151;
+  color: #F9FAFB;
+  z-index: 10;
+}
+
+.camera-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.camera-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.camera-icon-btn {
+  background: #374151;
+  border: 1px solid #4B5563;
+  color: #E5E7EB;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.camera-icon-btn:hover {
+  background: #4B5563;
+  color: #FFFFFF;
+  border-color: #6B7280;
+}
+
+.camera-icon-btn.active {
+  background: #F59E0B;
+  color: #000000;
+  border-color: #D97706;
+}
+
+/* Camera Viewport Body */
+.camera-viewport-body {
+  flex: 1;
+  position: relative;
+  background: #030712;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-video-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.camera-video-feed.hidden {
+  display: none;
+}
+
+.camera-state-overlay {
+  position: absolute;
+  inset: 0;
+  background: #111827;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #D1D5DB;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  z-index: 20;
+}
+
+.camera-state-overlay.error {
+  color: #F87171;
+}
+
+.camera-state-overlay h4 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  color: #F9FAFB;
+  margin: 0;
+}
+
+.spinner-large {
+  width: 44px;
+  height: 44px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--generali-red);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+/* Captured Snapshot Preview */
+.camera-captured-preview {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+}
+
+.camera-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  border-radius: var(--radius-md);
+}
+
+.captured-badge-overlay {
+  position: absolute;
+  top: 16px;
+  background: rgba(13, 130, 68, 0.9);
+  color: #FFFFFF;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   Card Viewfinder Overlay & Overlay Box (ISO/IEC 7810 ID-1 standard)
+   ========================================================================== */
+
+.card-viewfinder-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Card Box (Aspect Ratio 1.586:1 - standard Thai ID card dimensions 85.60 x 53.98 mm) */
+.card-overlay-box {
+  width: min(84%, 560px);
+  aspect-ratio: 1.586 / 1;
+  border-radius: 14px;
+  position: relative;
+  /* Dark mask cutout surrounding the card */
+  box-shadow: 0 0 0 9999px rgba(10, 15, 29, 0.72);
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+/* 4 Distinct Corner Brackets (Generali Signature Red) */
+.corner-bracket {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: var(--generali-red);
+  border-style: solid;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(196, 18, 48, 0.6));
+}
+
+.corner-bracket.top-left {
+  top: -2px;
+  left: -2px;
+  border-width: 4px 0 0 4px;
+  border-top-left-radius: 12px;
+}
+
+.corner-bracket.top-right {
+  top: -2px;
+  right: -2px;
+  border-width: 4px 4px 0 0;
+  border-top-right-radius: 12px;
+}
+
+.corner-bracket.bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-width: 0 0 4px 4px;
+  border-bottom-left-radius: 12px;
+}
+
+.corner-bracket.bottom-right {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 4px 4px 0;
+  border-bottom-right-radius: 12px;
+}
+
+/* Subtle Animated Laser Scan Line inside box */
+.viewfinder-scan-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(196, 18, 48, 0.8) 50%, transparent 100%);
+  box-shadow: 0 0 10px rgba(196, 18, 48, 0.9);
+  animation: scanBeam 2.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes scanBeam {
+  0% { top: 4%; opacity: 0.3; }
+  50% { opacity: 0.9; }
+  100% { top: 96%; opacity: 0.3; }
+}
+
+.card-box-header-tag {
+  align-self: center;
+  background: rgba(0, 0, 0, 0.6);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.03em;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Internal Silhouette Alignment Guides */
+.card-silhouette-guides {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.guide-garuda {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  width: 44px;
+  height: 38px;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #FFFFFF;
+}
+
+.guide-chip {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 40px;
+  border: 1px dashed #F59E0B;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #F59E0B;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.guide-photo {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 76px;
+  height: 98px;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #FFFFFF;
+}
+
+.card-silhouette-guides.laser .guide-laser-field {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 36px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.1em;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.viewfinder-instruction-banner {
+  margin-top: 14px;
+  background: rgba(17, 24, 39, 0.85);
+  color: #E5E7EB;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+/* ==========================================================================
+   Camera Modal Footer & Shutter Controls
+   ========================================================================== */
+
+.camera-modal-footer {
+  background: #1F2937;
+  border-top: 1px solid #374151;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.camera-capture-controls {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.crop-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #D1D5DB;
+  cursor: pointer;
+  user-select: none;
+}
+
+.crop-toggle-label input[type="checkbox"] {
+  accent-color: var(--generali-red);
+  width: 16px;
+  height: 16px;
+}
+
+.shutter-spacer {
+  width: 180px;
+}
+
+/* Big Circular Shutter Button */
+.camera-shutter-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 3px solid #FFFFFF;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.camera-shutter-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+  border-color: var(--generali-red-light);
+  box-shadow: 0 0 25px rgba(196, 18, 48, 0.5);
+}
+
+.camera-shutter-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.camera-shutter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shutter-inner-circle {
+  background: var(--generali-red);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.camera-review-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.camera-review-actions .btn {
+  min-width: 140px;
+}
+
+/* ==========================================================================
+   Ultra-Compact Review Panel (No Scrolling Required, Above-the-fold)
+   ========================================================================== */
+
+.workspace-container {
+  scroll-margin-top: 80px;
+}
+
+.upload-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.review-card-compact {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.compact-card-header {
+  padding: 10px 14px;
+  background: #FAFAFA;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.compact-card-header .header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.compact-card-header .header-title-row h3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-xs {
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  border-radius: 4px;
+  gap: 4px;
+  height: 25px;
+  font-weight: 500;
+}
+
+.compact-latency {
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.compact-card-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+/* 1. Compact ID Banner */
+.compact-id-banner {
+  background: linear-gradient(135deg, #181C24 0%, #282E38 100%);
+  color: #FFFFFF;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.compact-id-banner .id-banner-left {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.compact-id-banner .id-banner-tag {
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94A3B8;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.compact-id-banner .id-banner-val {
+  font-family: var(--font-mono);
+  font-size: 1.22rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.compact-id-banner .laser-code-compact {
+  font-size: 1.18rem;
+  letter-spacing: 0.08em;
+  color: #38BDF8;
+}
+
+.compact-id-banner .id-banner-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 2. Compact Data Rows (2-col & 4-col) */
+.compact-data-row {
+  display: grid;
+  gap: 7px;
+  flex: 1;
+  min-height: 50px;
+}
+
+.compact-data-row.two-cols {
+  grid-template-columns: 1fr 1fr;
+}
+
+.compact-data-row.four-cols {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 860px) {
+  .compact-data-row.four-cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 3. Compact Cell Elements */
+.compact-cell {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 6px 9px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all var(--transition-fast);
+}
+
+.compact-cell:hover {
+  border-color: #CBD5E1;
+  background: #FAFAFA;
+}
+
+.compact-cell .field-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.compact-cell .field-key {
+  font-size: 0.68rem;
+  color: #64748B;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.compact-cell .field-val {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.compact-cell .field-val.primary-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.compact-cell .field-sub-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 0.69rem;
+  color: #64748B;
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+.compact-cell .field-sub-inline span {
+  background: #F8FAFC;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+
+.lifetime-pill {
+  display: inline-block;
+  color: #059669 !important;
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+/* 4. Compact Address Cell */
+.address-cell-compact {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 7px 11px;
+  flex: 1.1;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.address-cell-compact .address-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.address-cell-compact .address-full-line {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1E293B;
+  line-height: 1.35;
+  margin: 3px 0 5px;
+  padding: 3px 6px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 4px;
+}
+
+.address-mini-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mini-chip {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  font-size: 0.67rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* 5. Laser Review Specific Styles */
+.laser-breakdown-row {
+  margin-top: 0;
+  flex: 1;
+  min-height: 54px;
+}
+
+.laser-tag-badge {
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: #EEF2F6;
+  color: #475569;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.laser-val-text {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: 0.05em;
+}
+
+.compact-note-banner {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+  padding: 6px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+
+.note-icon-small {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* 6. Alert & Quality Gate Banners (Compact) */
+.compact-qg-banner {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 6px;
+  padding: 7px 10px;
+  flex-shrink: 0;
+}
+
+.compact-qg-banner .qg-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.compact-qg-banner .qg-icon-wrapper-small {
+  flex-shrink: 0;
+}
+
+.compact-qg-banner .qg-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #991B1B;
+}
+
+.compact-qg-banner .qg-status-pill {
+  margin-left: auto;
+  background: #DC2626;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.compact-qg-banner .compact-text {
+  font-size: 0.73rem;
+  color: #7F1D1D;
+  margin: 3px 0 0 23px;
+  line-height: 1.3;
+}
+
+.compact-alert {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #B45309;
+  padding: 4px 8px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+}
+
+.review-pill-small {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  color: #92400E;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 3px;
+}
+
+/* 7. Collapsible JSON Viewer */
+.json-container-compact {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  margin-top: 4px;
+}
+
+.json-viewer-compact {
+  background: #0F172A;
+  color: #E2E8F0;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.70rem;
+  line-height: 1.35;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
 }

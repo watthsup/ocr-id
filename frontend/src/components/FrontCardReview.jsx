@@ -9,11 +9,84 @@ import {
   Copy,
   FileCheck2,
   MapPin,
+  ShieldAlert,
   ShieldCheck,
   User,
   XCircle,
 } from 'lucide-react';
 import ConfidenceBadge from './ConfidenceBadge';
+
+const THAI_MONTH_NAMES = [
+  '',
+  'ม.ค.',
+  'ก.พ.',
+  'มี.ค.',
+  'เม.ย.',
+  'พ.ค.',
+  'มิ.ย.',
+  'ก.ค.',
+  'ส.ค.',
+  'ก.ย.',
+  'ต.ค.',
+  'พ.ย.',
+  'ธ.ค.',
+];
+
+/**
+ * Derives clean normalized date representations from normalized attributes
+ * (iso_date, normalized_value, day, month, year_be, year_ce), NEVER reading raw OCR text.
+ */
+function getNormalizedDateDisplay(dateField, fieldConfidence) {
+  if (!dateField && !fieldConfidence) {
+    return { primary: '—', isoDate: null, isLifetime: false, yearCe: null, yearBe: null };
+  }
+
+  // 1. Lifetime Expiry Check
+  if (dateField?.is_lifetime || fieldConfidence?.normalized_value?.includes('ตลอดชีพ')) {
+    return {
+      primary: 'ตลอดชีพ (Lifetime)',
+      isoDate: null,
+      isLifetime: true,
+      yearCe: null,
+      yearBe: null,
+    };
+  }
+
+  // 2. Normalized ISO Date (YYYY-MM-DD)
+  const isoDate = dateField?.iso_date || fieldConfidence?.normalized_value || null;
+
+  // 3. Normalized Date components (day, month, year_be, year_ce)
+  let day = dateField?.day;
+  let month = dateField?.month;
+  let yearBe = dateField?.year_be;
+  let yearCe = dateField?.year_ce;
+
+  // If numeric components are missing, derive them from normalized isoDate
+  if ((!day || !month || !yearBe) && isoDate && /^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+    const parts = isoDate.split('-').map(Number);
+    yearCe = parts[0];
+    month = parts[1];
+    day = parts[2];
+    yearBe = yearCe + 543;
+  }
+
+  // 4. Construct normalized Thai formatted date (e.g. "15 ม.ค. 2533")
+  let normalizedTh = null;
+  if (day && month && yearBe) {
+    const mName = THAI_MONTH_NAMES[month] || `${month}`;
+    normalizedTh = `${day} ${mName} ${yearBe}`;
+  } else if (isoDate) {
+    normalizedTh = isoDate;
+  }
+
+  return {
+    primary: normalizedTh || isoDate || '—',
+    isoDate: isoDate || '—',
+    yearBe: yearBe,
+    yearCe: yearCe,
+    isLifetime: false,
+  };
+}
 
 export default function FrontCardReview({
   data,
@@ -47,263 +120,270 @@ export default function FrontCardReview({
     date_of_issue,
     date_of_expiry,
     confidence_summary,
+    is_rejected,
+    rejection_reason,
   } = data;
 
   const fieldScores = confidence_summary?.fields || {};
   const threshold = confidence_summary?.confidence_threshold ?? 0.8;
   const reviewFields = confidence_summary?.fields_needing_review || [];
+  const isQGRejected = is_rejected || confidence_summary?.is_quality_gate_passed === false;
+
+  // Compute normalized date representations strictly from normalized fields
+  const dobNorm = getNormalizedDateDisplay(date_of_birth, fieldScores.date_of_birth);
+  const doiNorm = getNormalizedDateDisplay(date_of_issue, fieldScores.date_of_issue);
+  const doeNorm = getNormalizedDateDisplay(date_of_expiry, fieldScores.date_of_expiry);
 
   return (
-    <div className="ui-card">
-      <div className="card-header">
-        <h3>
-          <FileCheck2 size={18} color="#1E293B" />
-          <span>Extraction & Verification Result</span>
-        </h3>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* Quick Confidence Pill */}
+    <div className="ui-card review-card-compact">
+      <div className="card-header compact-card-header">
+        <div className="header-title-row">
+          <FileCheck2 size={16} color="#C41230" />
+          <h3>Extraction & Verification Result</h3>
+        </div>
+        <div className="header-actions-inline">
           {confidence_summary && (
             <span
-              className={`badge ${confidence_summary.is_overall_confident ? 'badge-success' : 'badge-warning'}`}
-              title={`Confidence threshold: ${(threshold * 100).toFixed(0)}%`}
+              className={`badge badge-compact ${
+                isQGRejected
+                  ? 'badge-error'
+                  : confidence_summary.is_overall_confident
+                  ? 'badge-success'
+                  : 'badge-warning'
+              }`}
+              title={`Confidence threshold: ${(threshold * 100).toFixed(0)}% | Quality Gate: 40%`}
             >
-              {confidence_summary.is_overall_confident ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-              <span>{confidence_summary.overall_confidence_percentage}% Confidence</span>
+              {isQGRejected ? (
+                <ShieldAlert size={11} />
+              ) : confidence_summary.is_overall_confident ? (
+                <CheckCircle2 size={11} />
+              ) : (
+                <AlertTriangle size={11} />
+              )}
+              <span>
+                {isQGRejected
+                  ? `${confidence_summary.overall_confidence_percentage}% (Rejected)`
+                  : `${confidence_summary.overall_confidence_percentage}% Conf.`}
+              </span>
             </span>
           )}
 
           {processingTimeMs && (
-            <span className="latency-badge" title="Total Pipeline Latency">
-              <Clock size={12} /> {processingTimeMs.toFixed(0)} ms
+            <span className="latency-badge compact-latency" title="Pipeline Latency">
+              <Clock size={11} /> {processingTimeMs.toFixed(0)} ms
             </span>
           )}
+
           <button
             type="button"
-            className="btn btn-outline btn-sm"
+            className="btn btn-outline btn-xs"
+            onClick={() => setShowJson(!showJson)}
+            title="Toggle JSON Contract"
+          >
+            <Code size={11} />
+            <span>{showJson ? 'Hide JSON' : 'JSON'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-outline btn-xs"
             onClick={copyToClipboard}
             title="Copy structured JSON to clipboard"
           >
-            {copied ? <Check size={14} color="#0D8244" /> : <Copy size={14} />}
+            {copied ? <Check size={11} color="#0D8244" /> : <Copy size={11} />}
             <span>{copied ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
       </div>
 
-      <div className="card-body">
-        {/* Review Alert Banner only when low confidence or failed checksum */}
-        {reviewFields.length > 0 && (
-          <div className="review-alert-banner">
-            <AlertTriangle size={16} />
-            <div>
-              <strong>Review Required:</strong> The following field(s) scored below the {(threshold * 100).toFixed(0)}% confidence threshold:
-              <span className="review-fields-list">
-                {reviewFields.map((f) => (
-                  <span key={f} className="review-pill">{fieldScores[f]?.field_name_en || f}</span>
-                ))}
-              </span>
+      <div className="card-body compact-card-body">
+        {/* Quality Gate Rejection Banner (< 40% Confidence) */}
+        {isQGRejected && (
+          <div className="quality-gate-rejected-banner compact-qg-banner">
+            <div className="qg-header">
+              <div className="qg-icon-wrapper-small">
+                <ShieldAlert size={16} color="#C41230" />
+              </div>
+              <div className="qg-title-group">
+                <span className="qg-title">Quality Gate Rejected ({confidence_summary?.overall_confidence_percentage ?? '—'}% &lt; 40%)</span>
+              </div>
+              <span className="qg-status-pill">REJECTED</span>
             </div>
+            <p className="qg-reason-text compact-text">
+              {rejection_reason ||
+                confidence_summary?.rejection_reason ||
+                'Image quality is too low for reliable OCR. Please recapture a clear, well-lit image.'}
+            </p>
           </div>
         )}
 
-        {/* National ID Banner */}
-        <div className="id-banner">
-          <div>
-            <div className="id-label">Citizen Identification Number (เลขประจำตัวประชาชน)</div>
-            <div className="id-number">{formatThaiId(identification_number)}</div>
+        {/* Review Alert Banner only when low confidence or failed checksum */}
+        {!isQGRejected && reviewFields.length > 0 && (
+          <div className="review-alert-banner compact-alert">
+            <AlertTriangle size={13} />
+            <span>
+              <strong>Review Required:</strong>{' '}
+              {reviewFields.map((f) => (
+                <span key={f} className="review-pill-small">{fieldScores[f]?.field_name_en || f}</span>
+              ))}
+            </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        )}
+
+        {/* 1. National ID Banner (Single Compact Row) */}
+        <div className="id-banner compact-id-banner">
+          <div className="id-banner-left">
+            <span className="id-banner-tag">ID No. (เลขประจำตัวประชาชน)</span>
+            <span className="id-banner-val">{formatThaiId(identification_number)}</span>
+          </div>
+          <div className="id-banner-right">
             {is_id_checksum_valid ? (
-              <span className="badge badge-success">
-                <ShieldCheck size={13} /> Mod 11 Valid
+              <span className="badge badge-success badge-compact">
+                <ShieldCheck size={11} /> Mod 11 Valid
               </span>
             ) : (
-              <span className="badge badge-error">
-                <XCircle size={13} /> Checksum Invalid
+              <span className="badge badge-error badge-compact">
+                <XCircle size={11} /> Checksum Error
               </span>
             )}
-            <ConfidenceBadge fieldConfidence={fieldScores.identification_number} />
+            <ConfidenceBadge fieldConfidence={fieldScores.identification_number} compact />
           </div>
         </div>
 
-        {/* Names Section */}
-        <div className="section-block">
-          <div className="section-title">
-            <User size={14} color="#475569" /> Names & Personal Identity
+        {/* 2. Names Section (2 Columns: Thai & English) */}
+        <div className="compact-data-row two-cols">
+          {/* Thai Name */}
+          <div className="field-cell compact-cell">
+            <div className="field-cell-header">
+              <span className="field-key">ชื่อ-นามสกุล (Thai Name)</span>
+              <ConfidenceBadge fieldConfidence={fieldScores.thai_name} compact />
+            </div>
+            <div className="field-val thai-text primary-name">{thai_name?.full_name || '—'}</div>
+            {(thai_name?.title || thai_name?.first_name || thai_name?.last_name) && (
+              <div className="field-sub-inline">
+                {thai_name?.title && <span>คำนำหน้า: {thai_name.title}</span>}
+                {thai_name?.first_name && <span>ชื่อ: {thai_name.first_name}</span>}
+                {thai_name?.middle_name && <span>กลาง: {thai_name.middle_name}</span>}
+                {thai_name?.last_name && <span>สกุล: {thai_name.last_name}</span>}
+              </div>
+            )}
           </div>
-          <div className="data-grid-2">
-            {/* Thai Name */}
-            <div className="field-cell">
-              <div className="field-header-row">
-                <span className="field-key">ชื่อ-นามสกุล (Thai Name)</span>
-                <ConfidenceBadge fieldConfidence={fieldScores.thai_name} />
-              </div>
-              <div className="field-val thai-text">{thai_name?.full_name || '—'}</div>
-              <div className="field-sub">
-                คำนำหน้า: {thai_name?.title || '—'} | ชื่อ: {thai_name?.first_name || '—'}{' '}
-                {thai_name?.middle_name ? `| กลาง: ${thai_name.middle_name}` : ''} | นามสกุล: {thai_name?.last_name || '—'}
-              </div>
-            </div>
 
-            {/* English Name */}
-            <div className="field-cell">
-              <div className="field-header-row">
-                <span className="field-key">English Name</span>
-                <ConfidenceBadge fieldConfidence={fieldScores.english_name} />
-              </div>
-              <div className="field-val">{english_name?.full_name || '—'}</div>
-              <div className="field-sub">
-                Title: {english_name?.title || '—'} | First: {english_name?.first_name || '—'}{' '}
-                {english_name?.middle_name ? `| Mid: ${english_name.middle_name}` : ''} | Last: {english_name?.last_name || '—'}
-              </div>
+          {/* English Name */}
+          <div className="field-cell compact-cell">
+            <div className="field-cell-header">
+              <span className="field-key">English Name</span>
+              <ConfidenceBadge fieldConfidence={fieldScores.english_name} compact />
             </div>
+            <div className="field-val primary-name">{english_name?.full_name || '—'}</div>
+            {(english_name?.title || english_name?.first_name || english_name?.last_name) && (
+              <div className="field-sub-inline">
+                {english_name?.title && <span>Title: {english_name.title}</span>}
+                {english_name?.first_name && <span>First: {english_name.first_name}</span>}
+                {english_name?.middle_name && <span>Mid: {english_name.middle_name}</span>}
+                {english_name?.last_name && <span>Last: {english_name.last_name}</span>}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Dates & Demographics */}
-        <div className="section-block">
-          <div className="section-title">
-            <Calendar size={14} color="#475569" /> Dates & Validity
-          </div>
-          <div className="data-grid-3">
-            {/* Date of Birth */}
-            <div className="field-cell">
-              <div className="field-header-row">
-                <span className="field-key">วันเกิด (DOB)</span>
-                <ConfidenceBadge fieldConfidence={fieldScores.date_of_birth} />
-              </div>
-              <div className="field-val thai-text">{date_of_birth?.raw_text_th || '—'}</div>
-              <div className="field-sub">
-                CE: {date_of_birth?.iso_date || '—'} ({date_of_birth?.year_ce || '—'})
-              </div>
-              <div className="field-sub">
-                BE: {date_of_birth?.year_be || '—'} (พ.ศ.)
-              </div>
+        {/* 3. Dates & Demographics (Single 4-Column Grid: DOB | Issue | Expiry | Religion) */}
+        <div className="compact-data-row four-cols">
+          {/* Date of Birth */}
+          <div className="field-cell compact-cell">
+            <div className="field-cell-header">
+              <span className="field-key">วันเกิด (DOB)</span>
+              <ConfidenceBadge fieldConfidence={fieldScores.date_of_birth} compact />
             </div>
-
-            {/* Date of Issue */}
-            <div className="field-cell">
-              <div className="field-header-row">
-                <span className="field-key">วันออกบัตร (Issue)</span>
-                <ConfidenceBadge fieldConfidence={fieldScores.date_of_issue} />
-              </div>
-              <div className="field-val thai-text">{date_of_issue?.raw_text_th || '—'}</div>
-              <div className="field-sub">
-                CE: {date_of_issue?.iso_date || '—'} ({date_of_issue?.year_ce || '—'})
-              </div>
-              <div className="field-sub">
-                BE: {date_of_issue?.year_be || '—'} (พ.ศ.)
-              </div>
-            </div>
-
-            {/* Date of Expiry */}
-            <div className="field-cell">
-              <div className="field-header-row">
-                <span className="field-key">วันหมดอายุ (Expiry)</span>
-                <ConfidenceBadge fieldConfidence={fieldScores.date_of_expiry} />
-              </div>
-              {date_of_expiry?.is_lifetime ? (
-                <div style={{ marginTop: '4px' }}>
-                  <span className="badge badge-info">ตลอดชีพ (Lifetime)</span>
-                </div>
-              ) : (
-                <>
-                  <div className="field-val thai-text">{date_of_expiry?.raw_text_th || '—'}</div>
-                  <div className="field-sub">
-                    CE: {date_of_expiry?.iso_date || '—'} ({date_of_expiry?.year_ce || '—'})
-                  </div>
-                  <div className="field-sub">
-                    BE: {date_of_expiry?.year_be || '—'} (พ.ศ.)
-                  </div>
-                </>
+            <div className="field-val thai-text">{dobNorm.primary}</div>
+            <div className="field-sub-inline">
+              {dobNorm.isoDate && dobNorm.isoDate !== '—' && (
+                <span>ISO: {dobNorm.isoDate}</span>
               )}
+              {dobNorm.yearCe && <span>CE: {dobNorm.yearCe}</span>}
             </div>
           </div>
-        </div>
 
-        {/* Religion */}
-        <div className="section-block">
-          <div className="data-grid-2">
-            <div className="field-cell">
-              <div className="field-header-row">
-                <span className="field-key">ศาสนา (Religion)</span>
-                <ConfidenceBadge fieldConfidence={fieldScores.religion} />
-              </div>
-              <div className="field-val thai-text">{religion || '—'}</div>
+          {/* Date of Issue */}
+          <div className="field-cell compact-cell">
+            <div className="field-cell-header">
+              <span className="field-key">วันออกบัตร (Issue)</span>
+              <ConfidenceBadge fieldConfidence={fieldScores.date_of_issue} compact />
+            </div>
+            <div className="field-val thai-text">{doiNorm.primary}</div>
+            <div className="field-sub-inline">
+              {doiNorm.isoDate && doiNorm.isoDate !== '—' && (
+                <span>ISO: {doiNorm.isoDate}</span>
+              )}
+              {doiNorm.yearCe && <span>CE: {doiNorm.yearCe}</span>}
+            </div>
+          </div>
+
+          {/* Date of Expiry */}
+          <div className="field-cell compact-cell">
+            <div className="field-cell-header">
+              <span className="field-key">วันหมดอายุ (Expiry)</span>
+              <ConfidenceBadge fieldConfidence={fieldScores.date_of_expiry} compact />
+            </div>
+            {doeNorm.isLifetime ? (
+              <div className="field-val thai-text lifetime-pill">ตลอดชีพ (Lifetime)</div>
+            ) : (
+              <>
+                <div className="field-val thai-text">{doeNorm.primary}</div>
+                <div className="field-sub-inline">
+                  {doeNorm.isoDate && doeNorm.isoDate !== '—' && (
+                    <span>ISO: {doeNorm.isoDate}</span>
+                  )}
+                  {doeNorm.yearCe && <span>CE: {doeNorm.yearCe}</span>}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Religion */}
+          <div className="field-cell compact-cell">
+            <div className="field-cell-header">
+              <span className="field-key">ศาสนา (Religion)</span>
+              <ConfidenceBadge fieldConfidence={fieldScores.religion} compact />
+            </div>
+            <div className="field-val thai-text">{religion || '—'}</div>
+            <div className="field-sub-inline">
+              <span>สัญชาติไทย (Thai)</span>
             </div>
           </div>
         </div>
 
-        {/* Address */}
-        <div className="section-block">
-          <div className="section-title">
-            <MapPin size={14} color="#475569" /> ที่อยู่ตามทะเบียนราษฎร (Registered Address)
+        {/* 4. Registered Address (Full Text + Structured Mini-Chips) */}
+        <div className="field-cell compact-cell address-cell-compact">
+          <div className="field-cell-header">
+            <div className="address-label-row">
+              <MapPin size={12} color="#C41230" />
+              <span className="field-key">ที่อยู่ตามทะเบียนราษฎร (Registered Address)</span>
+            </div>
+            <ConfidenceBadge fieldConfidence={fieldScores.address} compact />
           </div>
-          <div className="address-card">
-            <div className="address-header-row">
-              <div className="address-raw">
-                <strong>ที่อยู่เต็ม:</strong> {address?.raw_address || '—'}
-              </div>
-              <ConfidenceBadge fieldConfidence={fieldScores.address} />
-            </div>
-            <div className="address-chips">
-              {address?.house_no && (
-                <div className="address-chip">
-                  บ้านเลขที่: <span>{address.house_no}</span>
-                </div>
-              )}
-              {address?.moo && (
-                <div className="address-chip">
-                  หมู่ที่: <span>{address.moo}</span>
-                </div>
-              )}
-              {address?.trok_soi && (
-                <div className="address-chip">
-                  ตรอก/ซอย: <span>{address.trok_soi}</span>
-                </div>
-              )}
-              {address?.road && (
-                <div className="address-chip">
-                  ถนน: <span>{address.road}</span>
-                </div>
-              )}
-              {address?.sub_district && (
-                <div className="address-chip">
-                  ตำบล/แขวง: <span>{address.sub_district}</span>
-                </div>
-              )}
-              {address?.district && (
-                <div className="address-chip">
-                  อำเภอ/เขต: <span>{address.district}</span>
-                </div>
-              )}
-              {address?.province && (
-                <div className="address-chip">
-                  จังหวัด: <span>{address.province}</span>
-                </div>
-              )}
-              {address?.postal_code && (
-                <div className="address-chip">
-                  รหัสไปรษณีย์: <span>{address.postal_code}</span>
-                </div>
-              )}
-            </div>
+
+          <div className="address-full-line thai-text">
+            {address?.raw_address || '—'}
+          </div>
+
+          <div className="address-mini-chips">
+            {address?.house_no && <span className="mini-chip">เลขที่ {address.house_no}</span>}
+            {address?.moo && <span className="mini-chip">หมู่ {address.moo}</span>}
+            {address?.trok_soi && <span className="mini-chip">ซอย {address.trok_soi}</span>}
+            {address?.road && <span className="mini-chip">ถ.{address.road}</span>}
+            {address?.sub_district && <span className="mini-chip">ต./แขวง {address.sub_district}</span>}
+            {address?.district && <span className="mini-chip">อ./เขต {address.district}</span>}
+            {address?.province && <span className="mini-chip">จ.{address.province}</span>}
+            {address?.postal_code && <span className="mini-chip">{address.postal_code}</span>}
           </div>
         </div>
 
-        {/* Action Toggle JSON */}
-        <div className="result-footer">
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={() => setShowJson(!showJson)}
-          >
-            <Code size={14} />
-            <span>{showJson ? 'Hide JSON Contract' : 'View Full JSON Contract'}</span>
-          </button>
-        </div>
-
+        {/* Collapsible JSON Viewer */}
         {showJson && (
-          <pre className="json-viewer">{JSON.stringify(data, null, 2)}</pre>
+          <div className="json-container-compact fade-in">
+            <pre className="json-viewer-compact">{JSON.stringify(data, null, 2)}</pre>
+          </div>
         )}
       </div>
     </div>

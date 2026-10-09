@@ -20,6 +20,7 @@ export default function App() {
   // Timer & stage tracking state
   const [elapsedMs, setElapsedMs] = useState(0);
   const timerRef = useRef(null);
+  const workspaceRef = useRef(null);
 
   useEffect(() => {
     if (isLoading) {
@@ -76,12 +77,22 @@ export default function App() {
     }
   };
 
+  const scrollToWorkspace = () => {
+    if (workspaceRef.current) {
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetY = scrollTop + rect.top - 70;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedFile) return;
 
     setIsLoading(true);
     setError(null);
     setElapsedMs(0);
+    scrollToWorkspace();
 
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -108,6 +119,9 @@ export default function App() {
       } else {
         setLaserResult(json);
       }
+
+      // Smoothly bring the review workspace into view so the user doesn't have to scroll
+      setTimeout(scrollToWorkspace, 50);
     } catch (err) {
       setError(err.message || 'Failed to process document image.');
     } finally {
@@ -131,17 +145,20 @@ export default function App() {
           </div>
         )}
 
-        {/* Compact Top Pipeline Strip: Shows live steps & timings across the top without displacing side-by-side results */}
-        <TopPipelineBar
-          stages={currentResult?.stages}
-          timingsMs={currentResult?.timings_ms}
-          isLoading={isLoading}
-          elapsedMs={elapsedMs}
-          overallTimeMs={currentResult?.processing_time_ms ?? null}
-          error={error}
-        />
+        <div className="workspace-container" ref={workspaceRef}>
+          {/* Compact Top Pipeline Strip: Shows live steps & timings across the top without displacing side-by-side results */}
+          <TopPipelineBar
+            stages={currentResult?.stages}
+            timingsMs={currentResult?.timings_ms}
+            isLoading={isLoading}
+            elapsedMs={elapsedMs}
+            overallTimeMs={currentResult?.processing_time_ms ?? null}
+            error={error}
+            isRejected={currentResult?.is_rejected || currentResult?.status === 'rejected'}
+            rejectionReason={currentResult?.rejection_reason}
+          />
 
-        <div className="workspace-grid">
+          <div className="workspace-grid">
           {/* Left Column: Image Upload & Preview Controls */}
           <div>
             <ImageUpload
@@ -195,6 +212,7 @@ export default function App() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </main>
     </div>

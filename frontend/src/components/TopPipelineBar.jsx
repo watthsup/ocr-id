@@ -9,6 +9,7 @@ import {
   Eye,
   FileCheck2,
   Loader2,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Timer,
@@ -20,7 +21,7 @@ export const DEFAULT_STAGES = [
   { key: 'ocr', label: '2. Azure OCR', fullLabel: 'Azure Document Intelligence OCR', Icon: Eye },
   { key: 'kie', label: '3. LLM KIE', fullLabel: 'LLM Key Information Extraction', Icon: Brain },
   { key: 'validation', label: '4. Checksum', fullLabel: 'Domain & Checksum Validation', Icon: ShieldCheck },
-  { key: 'grounding', label: '5. Grounding', fullLabel: 'OCR Grounding & Scoring', Icon: Sparkles },
+  { key: 'grounding', label: '5. Grounding', fullLabel: 'OCR Grounding & Quality Gate', Icon: Sparkles },
 ];
 
 export default function TopPipelineBar({
@@ -30,6 +31,8 @@ export default function TopPipelineBar({
   elapsedMs = 0,
   overallTimeMs = null,
   error = null,
+  isRejected = false,
+  rejectionReason = null,
 }) {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -39,9 +42,10 @@ export default function TopPipelineBar({
       return DEFAULT_STAGES.map((def) => {
         const found = stages.find((s) => s.key === def.key);
         const ms = found?.ms ?? timingsMs[def.key] ?? null;
+        const status = found?.status || 'done';
         return {
           ...def,
-          status: 'done',
+          status,
           ms: typeof ms === 'number' ? ms : null,
         };
       });
@@ -105,6 +109,11 @@ export default function TopPipelineBar({
               <XCircle size={13} />
               <span>Inference Failed</span>
             </div>
+          ) : isRejected ? (
+            <div className="top-bar-rejected-badge" title={rejectionReason || 'Overall confidence < 40%'}>
+              <ShieldAlert size={13} color="#C41230" />
+              <span>Quality Gate Rejected (&lt; 40%)</span>
+            </div>
           ) : (
             <div className="top-bar-completed-badge">
               <CheckCircle2 size={13} color="#0D8244" />
@@ -117,6 +126,7 @@ export default function TopPipelineBar({
             {displayStages.map((s, idx) => {
               const isDone = s.status === 'done';
               const isRunning = s.status === 'running';
+              const isFailed = s.status === 'failed';
               return (
                 <div
                   key={s.key}
@@ -126,6 +136,8 @@ export default function TopPipelineBar({
                   <span className="top-step-icon">
                     {isDone ? (
                       <CheckCircle2 size={12} color="#0D8244" />
+                    ) : isFailed ? (
+                      <XCircle size={12} color="#C41230" />
                     ) : isRunning ? (
                       <Loader2 size={12} className="spin" color="#0284C7" />
                     ) : (
@@ -133,7 +145,7 @@ export default function TopPipelineBar({
                     )}
                   </span>
                   <span className="top-step-name">{s.label}</span>
-                  {isDone && s.ms !== null && (
+                  {s.ms !== null && (
                     <span className="top-step-ms">{s.ms.toFixed(0)}ms</span>
                   )}
                   {idx < displayStages.length - 1 && (
