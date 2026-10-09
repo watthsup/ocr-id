@@ -20,11 +20,20 @@ logger = logging.getLogger(__name__)
 class GroundingService:
     """Provides evidence grounding and field-level confidence scoring against Azure Document Intelligence OCR metadata."""
 
-    def __init__(self, confidence_threshold: Optional[float] = None):
+    def __init__(
+        self,
+        confidence_threshold: Optional[float] = None,
+        quality_gate_threshold: Optional[float] = None,
+    ):
         self.threshold = (
             confidence_threshold
             if confidence_threshold is not None
             else settings.CONFIDENCE_THRESHOLD
+        )
+        self.quality_gate_threshold = (
+            quality_gate_threshold
+            if quality_gate_threshold is not None
+            else getattr(settings, "QUALITY_GATE_MIN_CONFIDENCE", 0.40)
         )
 
     def _normalize_thai_text(self, text: str) -> str:
@@ -255,7 +264,7 @@ class GroundingService:
                 polygon = None
             else:
                 verification = "not_in_source"
-                confidence = 0.40
+                confidence = 0.20
                 polygon = None
                 issues.append("Field text could not be verified directly in OCR source text")
 
@@ -453,6 +462,18 @@ class GroundingService:
         confident_count = sum(1 for f in fields.values() if f.is_confident)
         review_fields = [f.field_code for f in fields.values() if not f.is_confident]
 
+        is_qg_passed = overall_conf >= self.quality_gate_threshold
+        qg_status = "passed" if is_qg_passed else "rejected"
+        qg_reason = (
+            None
+            if is_qg_passed
+            else (
+                f"Quality gate rejection: Overall OCR confidence ({overall_pct}%) is below "
+                f"the required minimum threshold of {int(self.quality_gate_threshold * 100)}%. "
+                "The image quality is too low or text is illegible for reliable verification. Please recapture a clear, well-lit image."
+            )
+        )
+
         return ConfidenceSummary(
             overall_confidence=round(overall_conf, 4),
             overall_confidence_percentage=overall_pct,
@@ -463,6 +484,10 @@ class GroundingService:
             review_fields_count=len(review_fields),
             fields=fields,
             fields_needing_review=review_fields,
+            quality_gate_threshold=self.quality_gate_threshold,
+            is_quality_gate_passed=is_qg_passed,
+            quality_gate_status=qg_status,
+            rejection_reason=qg_reason,
         )
 
     def ground_laser_id(
@@ -488,7 +513,7 @@ class GroundingService:
 
         if is_laser_id_valid_format is False:
             fc.issues.append("Laser ID did not match 12-char DOPA format (2 uppercase letters + 10 digits)")
-            fc.confidence = round(min(fc.confidence, 0.45), 4)
+            fc.confidence = round(min(fc.confidence, 0.35), 4)
             fc.confidence_percentage = round(fc.confidence * 100, 1)
             fc.is_confident = False
             fc.status = "needs_review"
@@ -498,6 +523,18 @@ class GroundingService:
         review_fields = [f.field_code for f in fields.values() if not f.is_confident]
         overall_conf = fc.confidence
         overall_pct = round(overall_conf * 100, 1)
+
+        is_qg_passed = overall_conf >= self.quality_gate_threshold
+        qg_status = "passed" if is_qg_passed else "rejected"
+        qg_reason = (
+            None
+            if is_qg_passed
+            else (
+                f"Quality gate rejection: Overall OCR confidence ({overall_pct}%) is below "
+                f"the required minimum threshold of {int(self.quality_gate_threshold * 100)}%. "
+                "Laser ID is illegible or unrecognized."
+            )
+        )
 
         return ConfidenceSummary(
             overall_confidence=round(overall_conf, 4),
@@ -509,4 +546,8 @@ class GroundingService:
             review_fields_count=len(review_fields),
             fields=fields,
             fields_needing_review=review_fields,
+            quality_gate_threshold=self.quality_gate_threshold,
+            is_quality_gate_passed=is_qg_passed,
+            quality_gate_status=qg_status,
+            rejection_reason=qg_reason,
         )

@@ -64,6 +64,10 @@ class ConfidenceSummary(BaseModel):
     review_fields_count: int = Field(0, description="Number of fields requiring human review")
     fields: Dict[str, FieldConfidence] = Field(default_factory=dict, description="Field-by-field confidence metrics")
     fields_needing_review: List[str] = Field(default_factory=list, description="List of field codes that require review")
+    quality_gate_threshold: float = Field(default=0.40, description="Minimum overall confidence to pass quality gate (0.40 / 40%)")
+    is_quality_gate_passed: bool = Field(default=True, description="True if overall_confidence >= quality_gate_threshold")
+    quality_gate_status: str = Field(default="passed", description="'passed' or 'rejected'")
+    rejection_reason: Optional[str] = Field(None, description="Quality gate rejection reason if rejected")
 
 
 class StageTiming(BaseModel):
@@ -148,7 +152,9 @@ class ThaiIdCardData(ThaiIdCardExtraction):
 
 
 class ThaiIdCardResponse(BaseModel):
-    status: str = "success"
+    status: str = Field(default="success", description="'success' or 'rejected'")
+    is_rejected: bool = Field(default=False, description="True if document failed quality gate threshold (< 40% confidence)")
+    rejection_reason: Optional[str] = Field(None, description="Reason for rejection when status is 'rejected'")
     data: Optional[ThaiIdCardData] = None
     stages: List[StageTiming] = Field(default_factory=list, description="Granular execution breakdown per pipeline stage")
     timings_ms: Dict[str, float] = Field(default_factory=dict, description="Detailed stage timings in milliseconds")
@@ -173,7 +179,9 @@ class ThaiIdCardLaserData(ThaiIdCardLaserExtraction):
 
 
 class ThaiIdCardLaserResponse(BaseModel):
-    status: str = "success"
+    status: str = Field(default="success", description="'success' or 'rejected'")
+    is_rejected: bool = Field(default=False, description="True if document failed quality gate threshold (< 40% confidence)")
+    rejection_reason: Optional[str] = Field(None, description="Reason for rejection when status is 'rejected'")
     data: Optional[ThaiIdCardLaserData] = None
     stages: List[StageTiming] = Field(default_factory=list, description="Granular execution breakdown per pipeline stage")
     timings_ms: Dict[str, float] = Field(default_factory=dict, description="Detailed stage timings in milliseconds")

@@ -187,6 +187,21 @@ $$\text{Check Digit} = (11 - \text{Remainder}) \pmod{10}$$
 * **Validation Layer Scope:** The validation service performs arithmetic checks (checksum calculation, CE = BE - 543 consistency, ISO-8601 formatting) and type casting without relying on regex rules for extraction.
 * **Lifetime Expiry:** Detects cards with perpetual validity (*"ตลอดชีพ"* / *"Lifetime"*) and flags `is_lifetime_expiry = true` with `date_of_expiry = null`.
 
+### 5.3. Quality Gate Rejection Policy (< 40% Confidence)
+* **Quality Gate Threshold:** Configured via `QUALITY_GATE_MIN_CONFIDENCE=0.40` (40%).
+* **Enforcement:** If overall OCR confidence across extracted fields is less than 40.0% (e.g. illegible photo, blank image, extreme blur, severe glare, or non-card image):
+  - Response `status` is set to `"rejected"`.
+  - `is_rejected = true` with a detailed `rejection_reason`.
+  - `ConfidenceSummary.is_quality_gate_passed = false` and `quality_gate_status = "rejected"`.
+  - Stage 5 (`grounding`) is marked as `failed`.
+  - If requested with `strict_quality_gate=true`, the endpoint returns HTTP `422 Unprocessable Content`.
+  - The UI displays a prominent red **Quality Gate Rejection Banner** with specific recapture instructions.
+
+### 5.4. Camera Viewfinder & Card Overlay Box
+* **Live Camera Viewfinder:** Allows capturing cards directly using device camera (`navigator.mediaDevices.getUserMedia`) with ISO/IEC 7810 ID-1 standard aspect ratio (~1.586).
+* **Card Overlay Box:** Center guide cutout with darkened surround mask, red corner brackets, alignment guides (Garuda, Smart Card chip, photo, and Laser ID indicators), and laser scanning beam.
+* **High-Precision Card Cropping:** Accurately crops the captured video frame to the card overlay box coordinates with 4% padding, cutting out surrounding desk clutter and maximizing OCR accuracy.
+
 ---
 
 ## 6. Single Real-Time REST API Specification

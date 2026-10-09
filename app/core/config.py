@@ -42,6 +42,10 @@ class Settings(BaseSettings):
         default=0.80,
         description="Minimum confidence score (0.0 - 1.0) to flag field as confident vs needs review"
     )
+    QUALITY_GATE_MIN_CONFIDENCE: float = Field(
+        default=0.40,
+        description="Minimum overall OCR confidence score (0.0 - 1.0) required to pass quality gate. Documents below this threshold are rejected."
+    )
 
 
 settings = Settings()

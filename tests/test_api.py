@@ -29,7 +29,7 @@ def mock_pipeline_service():
     """Provides a mocked PipelineService with simulated Azure OCR and LLM outputs."""
     mock_ocr = MagicMock(spec=AzureOCRClient)
     mock_ocr.extract_text.return_value = (
-        "1 1007 01234 56 1\nนายสมชาย ใจดี\nMr. Somchai Jaidee\nเกิด 15 ม.ค. 2533\n99/1 หมู่ 2 ต.บางตลาด อ.ปากเกร็ด จ.นนทบุรี 11120"
+        "1 1007 01234 56 1\nนายสมชาย ใจดี\nMr. Somchai Jaidee\nเกิด 15 ม.ค. 2533\n99/1 หมู่ 2 ต.บางตลาด อ.ปากเกร็ด จ.นนทบุรี 11120\nJT0-1234567-89"
     )
 
     mock_kie = MagicMock(spec=KIEService)
@@ -183,4 +183,46 @@ def test_realtime_laser_id_base64_payload(client, sample_image_bytes):
     res = response.json()
     assert res["status"] == "success"
     assert res["data"]["formatted_laser_id"] == "JT0-1234567-89"
+
+
+def test_realtime_id_card_quality_gate_rejection(sample_image_bytes):
+    """Test that when overall OCR confidence is below 40%, response status is 'rejected' and is_rejected=True."""
+    mock_ocr = MagicMock(spec=AzureOCRClient)
+    # Return OCR with very low confidence words
+    mock_ocr.extract_text.return_value = "unreadable text"
+    mock_ocr.extract_document.return_value = None
+
+    mock_kie = MagicMock(spec=KIEService)
+    mock_kie.extract.return_value = ThaiIdCardExtraction(
+        identification_number="1100701234561",
+        thai_name=None,
+        english_name=None,
+    )
+
+    pipeline = PipelineService(ocr_client=mock_ocr, kie_service=mock_kie)
+    app.dependency_overrides[get_pipeline_service] = lambda: pipeline
+
+    with TestClient(app) as test_client:
+        response = test_client.post(
+            "/api/v1/ocr/id-card",
+            files={"file": ("thai_id.jpg", sample_image_bytes, "image/jpeg")},
+        )
+        assert response.status_code == 200
+        res = response.json()
+        assert res["status"] == "rejected"
+        assert res["is_rejected"] is True
+        assert res["rejection_reason"] is not None
+        assert "Quality gate rejection" in res["rejection_reason"]
+        assert res["data"]["confidence_summary"]["is_quality_gate_passed"] is False
+        assert res["data"]["confidence_summary"]["quality_gate_status"] == "rejected"
+
+        # Strict quality gate mode raises 422
+        strict_response = test_client.post(
+            "/api/v1/ocr/id-card?strict_quality_gate=true",
+            files={"file": ("thai_id.jpg", sample_image_bytes, "image/jpeg")},
+        )
+        assert strict_response.status_code == 422
+        assert "Quality gate rejection" in strict_response.json()["detail"]
+
+    app.dependency_overrides.clear()
 

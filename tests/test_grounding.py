@@ -198,3 +198,58 @@ def test_grounding_laser_id():
     assert summary.is_overall_confident is True
     assert summary.fields["laser_id"].confidence >= 0.95
     assert summary.fields["laser_id"].verification == "in_source"
+    assert summary.is_quality_gate_passed is True
+    assert summary.quality_gate_status == "passed"
+
+
+def test_quality_gate_rejection_when_confidence_below_40():
+    """Verify that overall confidence < 0.40 triggers quality gate rejection."""
+    grounding = GroundingService(confidence_threshold=0.80, quality_gate_threshold=0.40)
+
+    # Empty/bare OCR doc where field matches cannot be found
+    empty_ocr = OCRDocument(content="something completely illegible", words=[OCRWord(content="unknown", confidence=0.20)])
+
+    extracted = ThaiIdCardExtraction(
+        identification_number="1100701234561",
+        thai_name=ThaiName(full_name="นายสมชาย ใจดี"),
+    )
+
+    summary = grounding.ground_thai_id_card(
+        extracted=extracted,
+        ocr_doc=empty_ocr,
+        is_id_checksum_valid=True,
+    )
+
+    # Low confidence should fail quality gate (< 40%)
+    assert summary.overall_confidence < 0.40
+    assert summary.is_quality_gate_passed is False
+    assert summary.quality_gate_status == "rejected"
+    assert summary.rejection_reason is not None
+    assert "Quality gate rejection" in summary.rejection_reason
+    assert "40%" in summary.rejection_reason
+
+
+def test_quality_gate_laser_id_rejection_below_40():
+    """Verify Laser ID quality gate rejection when confidence is below 40%."""
+    grounding = GroundingService(confidence_threshold=0.80, quality_gate_threshold=0.40)
+
+    low_conf_ocr = OCRDocument(
+        content="?? ??",
+        words=[OCRWord(content="??", confidence=0.25)],
+    )
+
+    extracted = ThaiIdCardLaserExtraction(
+        raw_text="JT0123456789",
+        raw_laser_id="JT0123456789",
+    )
+
+    summary = grounding.ground_laser_id(
+        extracted=extracted,
+        ocr_doc=low_conf_ocr,
+        is_laser_id_valid_format=False,
+    )
+
+    assert summary.overall_confidence < 0.40
+    assert summary.is_quality_gate_passed is False
+    assert summary.quality_gate_status == "rejected"
+    assert summary.rejection_reason is not None

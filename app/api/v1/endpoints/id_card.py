@@ -67,11 +67,20 @@ async def _extract_image_bytes(request: Request, file: Optional[UploadFile]) -> 
 async def extract_id_card(
     request: Request,
     file: Optional[UploadFile] = File(None, description="Thai ID card front image file (JPEG, PNG)"),
+    strict_quality_gate: bool = False,
     pipeline: PipelineService = Depends(get_pipeline_service),
 ) -> ThaiIdCardResponse:
     image_bytes = await _extract_image_bytes(request, file)
     try:
-        return pipeline.process_id_card(image_bytes=image_bytes)
+        res = pipeline.process_id_card(image_bytes=image_bytes)
+        if strict_quality_gate and res.is_rejected:
+            raise HTTPException(
+                status_code=getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422),
+                detail=res.rejection_reason or "Quality gate rejection: overall OCR confidence is below 40%.",
+            )
+        return res
+    except HTTPException:
+        raise
     except ValueError as exc:
         raise HTTPException(
             status_code=getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422),
@@ -99,11 +108,20 @@ async def extract_id_card(
 async def extract_laser_id(
     request: Request,
     file: Optional[UploadFile] = File(None, description="Thai ID card back image file (JPEG, PNG)"),
+    strict_quality_gate: bool = False,
     pipeline: PipelineService = Depends(get_pipeline_service),
 ) -> ThaiIdCardLaserResponse:
     image_bytes = await _extract_image_bytes(request, file)
     try:
-        return pipeline.process_laser_id(image_bytes=image_bytes)
+        res = pipeline.process_laser_id(image_bytes=image_bytes)
+        if strict_quality_gate and res.is_rejected:
+            raise HTTPException(
+                status_code=getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422),
+                detail=res.rejection_reason or "Quality gate rejection: overall OCR confidence is below 40%.",
+            )
+        return res
+    except HTTPException:
+        raise
     except ValueError as exc:
         raise HTTPException(
             status_code=getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422),

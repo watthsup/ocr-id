@@ -101,6 +101,9 @@ class PipelineService:
         total_ms = (time.perf_counter() - pipeline_start) * 1000
         timings_ms["total"] = round(total_ms, 2)
 
+        is_rejected = not confidence_summary.is_quality_gate_passed
+        rejection_reason = confidence_summary.rejection_reason
+
         card_data = ThaiIdCardData(
             **extracted.model_dump(),
             is_id_checksum_valid=is_valid,
@@ -112,11 +115,13 @@ class PipelineService:
             StageTiming(key="ocr", label="OCR & Layout Analysis (Azure Document Intelligence)", status="done", ms=timings_ms["ocr"]),
             StageTiming(key="kie", label="LLM Key Information Extraction", status="done", ms=timings_ms["kie"]),
             StageTiming(key="validation", label="13-Digit Checksum & Domain Verification", status="done", ms=timings_ms["validation"]),
-            StageTiming(key="grounding", label="OCR Grounding & Confidence Scoring", status="done", ms=timings_ms["grounding"]),
+            StageTiming(key="grounding", label="OCR Grounding & Quality Gate", status="failed" if is_rejected else "done", ms=timings_ms["grounding"]),
         ]
 
         return ThaiIdCardResponse(
-            status="success",
+            status="rejected" if is_rejected else "success",
+            is_rejected=is_rejected,
+            rejection_reason=rejection_reason,
             data=card_data,
             stages=stages,
             timings_ms=timings_ms,
@@ -166,6 +171,9 @@ class PipelineService:
         total_ms = (time.perf_counter() - pipeline_start) * 1000
         timings_ms["total"] = round(total_ms, 2)
 
+        is_rejected = not confidence_summary.is_quality_gate_passed
+        rejection_reason = confidence_summary.rejection_reason
+
         card_data = ThaiIdCardLaserData(
             raw_text=extracted.raw_text,
             raw_laser_id=extracted.raw_laser_id,
@@ -179,11 +187,13 @@ class PipelineService:
             StageTiming(key="ocr", label="OCR & Layout Analysis (Azure Document Intelligence)", status="done", ms=timings_ms["ocr"]),
             StageTiming(key="kie", label="LLM Laser ID Extraction", status="done", ms=timings_ms["kie"]),
             StageTiming(key="validation", label="Laser ID Format Verification", status="done", ms=timings_ms["validation"]),
-            StageTiming(key="grounding", label="OCR Grounding & Confidence Scoring", status="done", ms=timings_ms["grounding"]),
+            StageTiming(key="grounding", label="OCR Grounding & Quality Gate", status="failed" if is_rejected else "done", ms=timings_ms["grounding"]),
         ]
 
         return ThaiIdCardLaserResponse(
-            status="success",
+            status="rejected" if is_rejected else "success",
+            is_rejected=is_rejected,
+            rejection_reason=rejection_reason,
             data=card_data,
             stages=stages,
             timings_ms=timings_ms,
